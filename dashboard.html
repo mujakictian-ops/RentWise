@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RentWise — Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --black: #0C0C0F; --sidebar: #101013; --card: #141417; --card2: #1A1A1E;
+      --gold: #C9A84C; --gold-light: #E2C97A; --gold-dim: rgba(201,168,76,0.1);
+      --gold-border: rgba(201,168,76,0.2); --white: #FFFFFF;
+      --gray: #666B78; --gray-light: #9BA3B2; --border: rgba(255,255,255,0.07);
+      --red: #E05252; --green: #3ECF8E;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--black); color: var(--white); display: flex; min-height: 100vh; }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 240px; background: var(--sidebar); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; padding: 24px 16px; flex-shrink: 0;
+      position: fixed; top: 0; left: 0; height: 100vh;
+    }
+    .logo { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.05rem; color: var(--white); text-decoration: none; margin-bottom: 36px; padding: 0 6px; }
+    .logo-icon { width: 28px; height: 28px; background: linear-gradient(135deg, var(--gold), var(--gold-light)); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .logo span { color: var(--gold); }
+
+    .nav-section { font-size: 0.65rem; color: var(--gray); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 0 8px; margin-bottom: 6px; margin-top: 8px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px;
+      color: var(--gray-light); text-decoration: none; font-size: 0.86rem; font-weight: 500;
+      cursor: pointer; transition: all 0.15s; margin-bottom: 2px; border: none; background: transparent; width: 100%; text-align: left;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--white); }
+    .nav-item.active { background: var(--gold-dim); color: var(--gold); font-weight: 600; }
+    .nav-item .icon { font-size: 1rem; width: 20px; text-align: center; }
+
+    .sidebar-bottom { margin-top: auto; border-top: 1px solid var(--border); padding-top: 16px; }
+    .user-pill { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; }
+    .user-av { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--gold-light)); display: flex; align-items: center; justify-content: center; color: #0C0C0F; font-weight: 800; font-size: 0.75rem; flex-shrink: 0; }
+    .user-info { min-width: 0; }
+    .user-name { font-size: 0.82rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-status { font-size: 0.68rem; color: var(--green); }
+    .btn-logout { width: 100%; padding: 9px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--gray-light); font-family: 'Inter', sans-serif; font-size: 0.8rem; cursor: pointer; margin-top: 8px; transition: all 0.2s; }
+    .btn-logout:hover { border-color: rgba(255,255,255,0.15); color: var(--white); }
+
+    /* MAIN */
+    .main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* TOPBAR */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 32px; height: 64px; border-bottom: 1px solid var(--border);
+      background: rgba(12,12,15,0.8); backdrop-filter: blur(10px);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .topbar-left h2 { font-size: 1.05rem; font-weight: 700; }
+    .topbar-left p { font-size: 0.76rem; color: var(--gray); }
+    .btn-add {
+      display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 9px;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light)); border: none;
+      color: #0C0C0F; font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 700;
+      cursor: pointer; transition: opacity 0.2s;
+    }
+    .btn-add:hover { opacity: 0.85; }
+
+    /* CONTENT */
+    .content { padding: 28px 32px; flex: 1; }
+
+    /* QUARTERLY ALERT */
+    .q-alert {
+      background: linear-gradient(135deg, rgba(201,168,76,0.1), rgba(201,168,76,0.05));
+      border: 1px solid var(--gold-border); border-radius: 12px;
+      padding: 16px 20px; margin-bottom: 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .q-alert-left { display: flex; align-items: center; gap: 12px; }
+    .q-alert-icon { font-size: 1.3rem; }
+    .q-alert-text { font-size: 0.86rem; color: #D4C08A; line-height: 1.5; }
+    .q-alert-text strong { color: var(--gold); }
+    .q-alert-btn {
+      background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #0C0C0F;
+      border: none; padding: 9px 18px; border-radius: 8px; font-family: 'Inter', sans-serif;
+      font-size: 0.8rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+    }
+
+    /* STAT CARDS */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+    }
+    .stat-label { font-size: 0.7rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; margin-bottom: 10px; }
+    .stat-value { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+    .stat-value.gold { color: var(--gold); }
+    .stat-value.red { color: var(--red); }
+    .stat-value.green { color: var(--green); }
+    .stat-sub { font-size: 0.72rem; color: var(--gray); margin-top: 6px; }
+
+    /* TABS */
+    .tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 4px; width: fit-content; }
+    .tab-btn {
+      padding: 8px 16px; border-radius: 7px; border: none; background: transparent;
+      font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 600;
+      color: var(--gray-light); cursor: pointer; transition: all 0.2s;
+    }
+    .tab-btn.active { background: var(--card2); color: var(--white); }
+
+    /* TABLE */
+    .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .table-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    .table-head h3 { font-size: 0.9rem; font-weight: 700; }
+    .table-head-right { display: flex; gap: 8px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th { padding: 10px 20px; text-align: left; font-size: 0.68rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 700; background: rgba(255,255,255,0.015); }
+    tbody tr { border-top: 1px solid var(--border); transition: background 0.15s; }
+    tbody tr:hover { background: rgba(255,255,255,0.02); }
+    tbody td { padding: 12px 20px; font-size: 0.85rem; }
+
+    .badge {
+      display: inline-block; padding: 2px 9px; border-radius: 5px;
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.03em;
+    }
+    .badge.income { background: rgba(62,207,142,0.1); color: var(--green); }
+    .badge.expense { background: rgba(224,82,82,0.1); color: var(--red); }
+    .badge.repair { background: rgba(201,168,76,0.1); color: var(--gold); }
+
+    .empty-state { text-align: center; padding: 52px 20px; color: var(--gray); }
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: 14px; opacity: 0.5; }
+    .empty-state p { font-size: 0.86rem; line-height: 1.65; max-width: 280px; margin: 0 auto 20px; }
+
+    /* PROPERTIES GRID */
+    .prop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+    .prop-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+      transition: border-color 0.2s;
+    }
+    .prop-card:hover { border-color: var(--gold-border); }
+    .prop-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+    .prop-icon { font-size: 1.4rem; }
+    .prop-state { font-size: 0.7rem; background: var(--card2); color: var(--gray-light); padding: 3px 9px; border-radius: 5px; font-weight: 600; }
+    .prop-name { font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }
+    .prop-type { font-size: 0.75rem; color: var(--gray); margin-bottom: 14px; }
+    .prop-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .prop-stat-item { background: var(--card2); border-radius: 7px; padding: 10px 12px; }
+    .prop-stat-label { font-size: 0.65rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; margin-bottom: 4px; }
+    .prop-stat-value { font-size: 0.95rem; font-weight: 700; }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100; padding: 24px; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+    .modal {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 28px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto;
+      transform: scale(0.97); transition: transform 0.2s;
+    }
+    .modal-overlay.open .modal { transform: scale(1); }
+    .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
+    .modal-head h3 { font-size: 1.05rem; font-weight: 700; }
+    .modal-close { background: none; border: none; color: var(--gray); font-size: 1.3rem; cursor: pointer; padding: 2px 6px; }
+
+    .field { margin-bottom: 14px; }
+    label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--gray-light); margin-bottom: 5px; letter-spacing: 0.03em; }
+    input[type=text], input[type=number], input[type=date], select {
+      width: 100%; padding: 10px 13px; border-radius: 8px;
+      background: var(--card2); border: 1px solid var(--border);
+      color: var(--white); font-family: 'Inter', sans-serif; font-size: 0.88rem;
+      outline: none; transition: border-color 0.2s;
+    }
+    input:focus, select:focus { border-color: var(--gold-border); }
+    select option { background: var(--card2); }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .modal-footer { display: flex; gap: 10px; margin-top: 20px; }
+    .btn-cancel {
+      flex: 1; padding: 11px; border-radius: 8px; border: 1px solid var(--border);
+      background: transparent; color: var(--gray-light); font-family: 'Inter', sans-serif;
+      font-size: 0.88rem; font-weight: 600; cursor: pointer;
+    }
+    .btn-save {
+      flex: 2; padding: 11px; border-radius: 8px; border: none;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: #0C0C0F; font-family: 'Inter', sans-serif;
+      font-size: 0.88rem; font-weight: 700; cursor: pointer;
+    }
+    .btn-save:hover { opacity: 0.88; }
+
+    .hint { font-size: 0.72rem; color: var(--gray); margin-top: 4px; }
+
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+      .stats { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <a href="/" class="logo">
+    <div class="logo-icon">🏠</div>
+    Rent<span>Wise</span>
+  </a>
+
+  <div class="nav-section">Overview</div>
+  <button class="nav-item active" onclick="showTab('overview')"><span class="icon">📊</span> Dashboard</button>
+  <button class="nav-item" onclick="showTab('properties')"><span class="icon">🏠</span> Properties</button>
+
+  <div class="nav-section">Finances</div>
+  <button class="nav-item" onclick="showTab('income')"><span class="icon">💰</span> Income</button>
+  <button class="nav-item" onclick="showTab('expenses')"><span class="icon">🧾</span> Expenses</button>
+  <button class="nav-item" onclick="showTab('tax')"><span class="icon">📅</span> Quarterly Tax</button>
+
+  <div class="sidebar-bottom">
+    <div class="user-pill">
+      <div class="user-av" id="user-av">?</div>
+      <div class="user-info">
+        <div class="user-name" id="user-name">Loading…</div>
+        <div class="user-status">● Active</div>
+      </div>
+    </div>
+    <button class="btn-logout" onclick="logout()">Log out</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <h2 id="topbar-title">Dashboard</h2>
+      <p id="topbar-sub">Your rental portfolio overview</p>
+    </div>
+    <button class="btn-add" id="btn-add-main" onclick="openModal('property')">+ Add Property</button>
+  </div>
+
+  <div class="content">
+    <!-- QUARTERLY ALERT -->
+    <div class="q-alert" id="q-alert">
+      <div class="q-alert-left">
+        <div class="q-alert-icon">📅</div>
+        <div class="q-alert-text" id="q-alert-text">
+          <strong>Q3 estimated tax due September 15, 2026.</strong> Based on your current data, you owe approximately <strong id="q-amount">$0</strong>.
+        </div>
+      </div>
+      <button class="q-alert-btn" onclick="window.open('https://www.eftps.gov','_blank')">Pay on EFTPS →</button>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">This Quarter Income</div>
+        <div class="stat-value" id="stat-income">$0</div>
+        <div class="stat-sub" id="stat-income-sub">0 properties</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Deductible Expenses</div>
+        <div class="stat-value gold" id="stat-expenses">−$0</div>
+        <div class="stat-sub">Repairs, insurance, etc.</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Depreciation (annual)</div>
+        <div class="stat-value gold" id="stat-depreciation">−$0</div>
+        <div class="stat-sub">Auto-calculated</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Estimated Tax Owed</div>
+        <div class="stat-value red" id="stat-tax">$0</div>
+        <div class="stat-sub" id="stat-tax-due">Due Sep 15</div>
+      </div>
+    </div>
+
+    <!-- TABS CONTENT -->
+    <!-- OVERVIEW -->
+    <div id="tab-overview">
+      <div class="table-wrap">
+        <div class="table-head">
+          <h3>Recent Transactions</h3>
+          <div class="table-head-right">
+            <button class="btn-add" style="font-size:0.78rem;padding:7px 14px;" onclick="openModal('income')">+ Income</button>
+            <button class="btn-add" style="font-size:0.78rem;padding:7px 14px;background:var(--card2);color:var(--white);" onclick="openModal('expense')">+ Expense</button>
+          </div>
+        </div>
+        <div id="transactions-body">
+          <div class="empty-state">
+            <div class="icon">📋</div>
+            <p>No transactions yet. Add your first property and start logging income.</p>
+            <button class="btn-add" onclick="openModal('property')">Add property →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROPERTIES -->
+    <div id="tab-properties" style="display:none">
+      <div id="prop-grid-wrap">
+        <div class="empty-state" style="padding:52px 0">
+          <div class="icon">🏠</div>
+          <p>No properties yet. Add your first rental to get started.</p>
+          <button class="btn-add" onclick="openModal('property')">Add property →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INCOME -->
+    <div id="tab-income" style="display:none">
+      <div class="table-wrap">
+        <div class="table-head">
+          <h3>Income Entries</h3>
+          <button class="btn-add" style="font-size:0.78rem;padding:7px 14px;" onclick="openModal('income')">+ Add Income</button>
+        </div>
+        <div id="income-body">
+          <div class="empty-state"><div class="icon">💰</div><p>No income entries yet.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXPENSES -->
+    <div id="tab-expenses" style="display:none">
+      <div class="table-wrap">
+        <div class="table-head">
+          <h3>Expense Entries</h3>
+          <button class="btn-add" style="font-size:0.78rem;padding:7px 14px;" onclick="openModal('expense')">+ Add Expense</button>
+        </div>
+        <div id="expenses-body">
+          <div class="empty-state"><div class="icon">🧾</div><p>No expense entries yet.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAX -->
+    <div id="tab-tax" style="display:none">
+      <div class="table-wrap">
+        <div class="table-head"><h3>Quarterly Tax Summary — 2026</h3></div>
+        <table>
+          <thead>
+            <tr>
+              <th>Quarter</th><th>Due Date</th><th>Net Income</th><th>Est. Tax</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="tax-tbody">
+            <tr><td>Q1 Jan–Mar</td><td>Apr 15, 2026</td><td id="q1-net">—</td><td id="q1-tax">—</td><td><span class="badge income">Paid</span></td></tr>
+            <tr><td>Q2 Apr–Jun</td><td>Jun 16, 2026</td><td id="q2-net">—</td><td id="q2-tax">—</td><td><span class="badge income">Paid</span></td></tr>
+            <tr><td>Q3 Jul–Sep</td><td>Sep 15, 2026</td><td id="q3-net">—</td><td id="q3-tax">—</td><td><span class="badge expense">Due</span></td></tr>
+            <tr><td>Q4 Oct–Dec</td><td>Jan 15, 2027</td><td>—</td><td>—</td><td><span class="badge" style="background:rgba(255,255,255,0.05);color:var(--gray)">Upcoming</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Property -->
+<div class="modal-overlay" id="modal-property">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Add Property</h3>
+      <button class="modal-close" onclick="closeModal('property')">✕</button>
+    </div>
+    <div class="field">
+      <label>Property name / nickname</label>
+      <input type="text" id="prop-name" placeholder="e.g. 123 Main St or Downtown Studio" />
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>State</label>
+        <select id="prop-state">
+          <option value="CA">California (CA)</option>
+          <option value="NY">New York (NY)</option>
+          <option value="TX">Texas (TX)</option>
+          <option value="FL">Florida (FL)</option>
+          <option value="WA">Washington (WA)</option>
+          <option value="IL">Illinois (IL)</option>
+          <option value="CO">Colorado (CO)</option>
+          <option value="AZ">Arizona (AZ)</option>
+          <option value="GA">Georgia (GA)</option>
+          <option value="NC">North Carolina (NC)</option>
+          <option value="OTHER">Other state</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Property type</label>
+        <select id="prop-type">
+          <option value="single_family">Single family</option>
+          <option value="multi_unit">Multi-unit</option>
+          <option value="short_term">Short-term / Airbnb</option>
+          <option value="condo">Condo</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Purchase price ($)</label>
+        <input type="number" id="prop-price" placeholder="e.g. 400000" min="0" />
+      </div>
+      <div class="field">
+        <label>Purchase date</label>
+        <input type="date" id="prop-date" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Land value % (default 20%)</label>
+      <input type="number" id="prop-land" placeholder="20" min="0" max="80" value="20" />
+      <p class="hint">Land cannot be depreciated. Typical range: 15–30%.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('property')">Cancel</button>
+      <button class="btn-save" onclick="saveProperty()">Save Property</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Income -->
+<div class="modal-overlay" id="modal-income">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Add Income</h3>
+      <button class="modal-close" onclick="closeModal('income')">✕</button>
+    </div>
+    <div class="field">
+      <label>Property</label>
+      <select id="income-prop"></select>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Amount ($)</label>
+        <input type="number" id="income-amount" placeholder="e.g. 2400" min="0" />
+      </div>
+      <div class="field">
+        <label>Date received</label>
+        <input type="date" id="income-date" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Description (optional)</label>
+      <input type="text" id="income-desc" placeholder="Rent, security deposit return, etc." />
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('income')">Cancel</button>
+      <button class="btn-save" onclick="saveIncome()">Save Income</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Expense -->
+<div class="modal-overlay" id="modal-expense">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Add Expense</h3>
+      <button class="modal-close" onclick="closeModal('expense')">✕</button>
+    </div>
+    <div class="field">
+      <label>Property</label>
+      <select id="expense-prop"></select>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Amount ($)</label>
+        <input type="number" id="expense-amount" placeholder="e.g. 850" min="0" />
+      </div>
+      <div class="field">
+        <label>Date paid</label>
+        <input type="date" id="expense-date" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Category</label>
+      <select id="expense-cat">
+        <option value="repair">Repair (fully deductible)</option>
+        <option value="insurance">Insurance</option>
+        <option value="mortgage_interest">Mortgage interest</option>
+        <option value="property_tax">Property tax</option>
+        <option value="management">Property management fee</option>
+        <option value="utilities">Utilities</option>
+        <option value="improvement">Improvement (capitalized, not immediate)</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Description (optional)</label>
+      <input type="text" id="expense-desc" placeholder="e.g. Plumber — kitchen sink" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('expense')">Cancel</button>
+      <button class="btn-save" onclick="saveExpense()">Save Expense</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ==========================================
+  // CONFIG — zamenjaj s svojimi ključi
+  // ==========================================
+  const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+  const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // State
+  let user = null;
+  let profile = null;
+  let properties = [];
+  let incomeEntries = [];
+  let expenseEntries = [];
+  let activeTab = 'overview';
+
+  // ==========================================
+  // INIT
+  // ==========================================
+  (async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = '/rentwise-login.html'; return; }
+    user = session.user;
+
+    await loadProfile();
+    await loadProperties();
+    await loadTransactions();
+    updateStats();
+    setTodayDates();
+  })();
+
+  async function loadProfile() {
+    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+    if (!data) return;
+    profile = data;
+    const initials = (data.full_name || data.email || 'U')[0].toUpperCase();
+    document.getElementById('user-av').textContent = initials;
+    document.getElementById('user-name').textContent = data.full_name || data.email;
+  }
+
+  async function loadProperties() {
+    const { data } = await supabase.from('properties').select('*').eq('user_id', user.id).eq('is_active', true).order('created_at');
+    properties = data || [];
+    renderProperties();
+    populatePropertySelects();
+  }
+
+  async function loadTransactions() {
+    const now = new Date();
+    const quarter = Math.ceil((now.getMonth() + 1) / 3);
+    const year = now.getFullYear();
+
+    const { data: inc } = await supabase.from('income_entries')
+      .select('*, properties(name)').eq('user_id', user.id)
+      .eq('year', year).eq('quarter', quarter).order('entry_date', { ascending: false });
+
+    const { data: exp } = await supabase.from('expense_entries')
+      .select('*, properties(name)').eq('user_id', user.id)
+      .eq('year', year).eq('quarter', quarter).order('entry_date', { ascending: false });
+
+    incomeEntries = inc || [];
+    expenseEntries = exp || [];
+    renderTransactions();
+    renderIncomeTable();
+    renderExpensesTable();
+  }
+
+  // ==========================================
+  // STATS & TAX CALCULATION
+  // ==========================================
+  function updateStats() {
+    const totalIncome = incomeEntries.reduce((s, e) => s + Number(e.amount), 0);
+    const totalExpenses = expenseEntries
+      .filter(e => e.is_deductible && e.category !== 'improvement')
+      .reduce((s, e) => s + Number(e.amount), 0);
+
+    // Annual depreciation (quarter share)
+    const annualDepr = properties.reduce((s, p) => {
+      const buildingValue = p.purchase_price * (1 - (p.land_value_pct || 20) / 100);
+      return s + buildingValue / (p.useful_life_years || 27.5);
+    }, 0);
+    const quarterDepr = annualDepr / 4;
+
+    const netIncome = totalIncome - totalExpenses - quarterDepr;
+    const otherIncome = profile?.other_income || 0;
+
+    // Simple federal estimate (marginal rate on net rental income)
+    const estimatedTax = Math.max(0, netIncome * estimateTaxRate(netIncome, otherIncome));
+
+    document.getElementById('stat-income').textContent = fmt(totalIncome);
+    document.getElementById('stat-income-sub').textContent = `${properties.length} propert${properties.length === 1 ? 'y' : 'ies'}`;
+    document.getElementById('stat-expenses').textContent = '−' + fmt(totalExpenses);
+    document.getElementById('stat-depreciation').textContent = '−' + fmt(quarterDepr);
+    document.getElementById('stat-tax').textContent = fmt(estimatedTax);
+    document.getElementById('q-amount').textContent = fmt(estimatedTax);
+
+    // Q3 tax table
+    document.getElementById('q3-net').textContent = fmt(netIncome);
+    document.getElementById('q3-tax').textContent = fmt(estimatedTax);
+  }
+
+  function estimateTaxRate(netRental, otherIncome) {
+    const total = netRental + otherIncome;
+    if (total < 47150) return 0.22;
+    if (total < 100525) return 0.24;
+    if (total < 191950) return 0.32;
+    if (total < 243725) return 0.35;
+    return 0.37;
+  }
+
+  function fmt(n) {
+    return '$' + Math.max(0, Math.round(n)).toLocaleString();
+  }
+
+  // ==========================================
+  // RENDER
+  // ==========================================
+  function renderProperties() {
+    const wrap = document.getElementById('prop-grid-wrap');
+    if (!properties.length) {
+      wrap.innerHTML = `<div class="empty-state" style="padding:52px 0"><div class="icon">🏠</div><p>No properties yet. Add your first rental to get started.</p><button class="btn-add" onclick="openModal('property')">Add property →</button></div>`;
+      return;
+    }
+    const cards = properties.map(p => {
+      const annualDepr = (p.purchase_price * (1 - (p.land_value_pct || 20) / 100)) / (p.useful_life_years || 27.5);
+      const typeLabel = { single_family: 'Single family', multi_unit: 'Multi-unit', short_term: 'Short-term / Airbnb', condo: 'Condo' }[p.property_type] || p.property_type;
+      return `<div class="prop-card">
+        <div class="prop-card-top"><div class="prop-icon">🏠</div><div class="prop-state">${p.state}</div></div>
+        <div class="prop-name">${p.name}</div>
+        <div class="prop-type">${typeLabel}</div>
+        <div class="prop-stats">
+          <div class="prop-stat-item"><div class="prop-stat-label">Purchase</div><div class="prop-stat-value">$${(p.purchase_price/1000).toFixed(0)}K</div></div>
+          <div class="prop-stat-item"><div class="prop-stat-label">Annual depr.</div><div class="prop-stat-value" style="color:var(--gold)">$${Math.round(annualDepr).toLocaleString()}</div></div>
+        </div>
+      </div>`;
+    }).join('');
+    wrap.innerHTML = `<div class="prop-grid">${cards}</div>`;
+  }
+
+  function renderTransactions() {
+    const body = document.getElementById('transactions-body');
+    const all = [
+      ...incomeEntries.map(e => ({ ...e, _type: 'income' })),
+      ...expenseEntries.map(e => ({ ...e, _type: 'expense' })),
+    ].sort((a, b) => new Date(b.entry_date) - new Date(a.entry_date)).slice(0, 20);
+
+    if (!all.length) {
+      body.innerHTML = `<div class="empty-state"><div class="icon">📋</div><p>No transactions yet. Add your first property and start logging income.</p><button class="btn-add" onclick="openModal('property')">Add property →</button></div>`;
+      return;
+    }
+
+    body.innerHTML = `<table><thead><tr><th>Date</th><th>Property</th><th>Description</th><th>Type</th><th>Amount</th></tr></thead><tbody>
+      ${all.map(e => `<tr>
+        <td>${e.entry_date}</td>
+        <td>${e.properties?.name || '—'}</td>
+        <td>${e.description || e.category || '—'}</td>
+        <td><span class="badge ${e._type === 'income' ? 'income' : e.category === 'repair' ? 'repair' : 'expense'}">${e._type}</span></td>
+        <td style="font-weight:700;color:${e._type === 'income' ? 'var(--green)' : 'var(--red)'}">${e._type === 'income' ? '+' : '−'}$${Number(e.amount).toLocaleString()}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+  }
+
+  function renderIncomeTable() {
+    const body = document.getElementById('income-body');
+    if (!incomeEntries.length) { body.innerHTML = `<div class="empty-state"><div class="icon">💰</div><p>No income entries yet.</p></div>`; return; }
+    body.innerHTML = `<table><thead><tr><th>Date</th><th>Property</th><th>Description</th><th>Amount</th></tr></thead><tbody>
+      ${incomeEntries.map(e => `<tr><td>${e.entry_date}</td><td>${e.properties?.name || '—'}</td><td>${e.description || 'Rent'}</td><td style="color:var(--green);font-weight:700">+$${Number(e.amount).toLocaleString()}</td></tr>`).join('')}
+    </tbody></table>`;
+  }
+
+  function renderExpensesTable() {
+    const body = document.getElementById('expenses-body');
+    if (!expenseEntries.length) { body.innerHTML = `<div class="empty-state"><div class="icon">🧾</div><p>No expense entries yet.</p></div>`; return; }
+    body.innerHTML = `<table><thead><tr><th>Date</th><th>Property</th><th>Category</th><th>Description</th><th>Amount</th></tr></thead><tbody>
+      ${expenseEntries.map(e => `<tr><td>${e.entry_date}</td><td>${e.properties?.name || '—'}</td><td><span class="badge ${e.category === 'repair' ? 'repair' : 'expense'}">${e.category}</span></td><td>${e.description || '—'}</td><td style="color:var(--red);font-weight:700">−$${Number(e.amount).toLocaleString()}</td></tr>`).join('')}
+    </tbody></table>`;
+  }
+
+  function populatePropertySelects() {
+    ['income-prop', 'expense-prop'].forEach(id => {
+      const sel = document.getElementById(id);
+      sel.innerHTML = properties.length
+        ? properties.map(p => `<option value="${p.id}">${p.name}</option>`).join('')
+        : '<option value="">— Add a property first —</option>';
+    });
+  }
+
+  // ==========================================
+  // TABS
+  // ==========================================
+  const tabTitles = {
+    overview: ['Dashboard', 'Your rental portfolio overview'],
+    properties: ['Properties', 'Manage your rental properties'],
+    income: ['Income', 'Log rental income by property'],
+    expenses: ['Expenses', 'Track deductible expenses'],
+    tax: ['Quarterly Tax', 'IRS estimated payment schedule'],
+  };
+
+  const tabBtns = {
+    overview: '+ Add Property',
+    properties: '+ Add Property',
+    income: '+ Add Income',
+    expenses: '+ Add Expense',
+    tax: null,
+  };
+
+  function showTab(tab) {
+    activeTab = tab;
+    ['overview','properties','income','expenses','tax'].forEach(t => {
+      document.getElementById(`tab-${t}`).style.display = t === tab ? '' : 'none';
+    });
+    document.querySelectorAll('.nav-item').forEach((el, i) => {
+      el.classList.toggle('active', ['overview','properties','income','expenses','tax'][i] === tab);
+    });
+    const [title, sub] = tabTitles[tab];
+    document.getElementById('topbar-title').textContent = title;
+    document.getElementById('topbar-sub').textContent = sub;
+    const btnLabel = tabBtns[tab];
+    const btn = document.getElementById('btn-add-main');
+    if (btnLabel) {
+      btn.style.display = '';
+      btn.textContent = btnLabel;
+      btn.onclick = () => openModal(tab === 'expenses' ? 'expense' : tab === 'income' ? 'income' : 'property');
+    } else {
+      btn.style.display = 'none';
+    }
+  }
+
+  // ==========================================
+  // MODALS
+  // ==========================================
+  function openModal(type) { document.getElementById(`modal-${type}`).classList.add('open'); }
+  function closeModal(type) { document.getElementById(`modal-${type}`).classList.remove('open'); }
+
+  function setTodayDates() {
+    const today = new Date().toISOString().split('T')[0];
+    ['income-date','expense-date','prop-date'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && !el.value) el.value = today;
+    });
+  }
+
+  // ==========================================
+  // SAVE HANDLERS
+  // ==========================================
+  async function saveProperty() {
+    const name = document.getElementById('prop-name').value.trim();
+    const state = document.getElementById('prop-state').value;
+    const type = document.getElementById('prop-type').value;
+    const price = parseFloat(document.getElementById('prop-price').value) || 0;
+    const date = document.getElementById('prop-date').value;
+    const land = parseFloat(document.getElementById('prop-land').value) || 20;
+
+    if (!name || !price) { alert('Enter property name and purchase price.'); return; }
+
+    const { error } = await supabase.from('properties').insert({
+      user_id: user.id, name, state, property_type: type,
+      purchase_price: price, purchase_date: date || null, land_value_pct: land,
+    });
+
+    if (error) { alert(error.message); return; }
+    closeModal('property');
+    await loadProperties();
+    updateStats();
+  }
+
+  async function saveIncome() {
+    const propId = document.getElementById('income-prop').value;
+    const amount = parseFloat(document.getElementById('income-amount').value);
+    const date = document.getElementById('income-date').value;
+    const desc = document.getElementById('income-desc').value || 'Rent';
+
+    if (!propId || !amount || !date) { alert('Fill in all required fields.'); return; }
+
+    const { error } = await supabase.from('income_entries').insert({
+      user_id: user.id, property_id: propId, amount, entry_date: date, description: desc,
+    });
+
+    if (error) { alert(error.message); return; }
+    closeModal('income');
+    await loadTransactions();
+    updateStats();
+  }
+
+  async function saveExpense() {
+    const propId = document.getElementById('expense-prop').value;
+    const amount = parseFloat(document.getElementById('expense-amount').value);
+    const date = document.getElementById('expense-date').value;
+    const cat = document.getElementById('expense-cat').value;
+    const desc = document.getElementById('expense-desc').value;
+    const isDeductible = cat !== 'improvement';
+
+    if (!propId || !amount || !date) { alert('Fill in all required fields.'); return; }
+
+    const { error } = await supabase.from('expense_entries').insert({
+      user_id: user.id, property_id: propId, amount, entry_date: date,
+      category: cat, description: desc, is_deductible: isDeductible,
+    });
+
+    if (error) { alert(error.message); return; }
+    closeModal('expense');
+    await loadTransactions();
+    updateStats();
+  }
+
+  // ==========================================
+  // LOGOUT
+  // ==========================================
+  async function logout() {
+    await supabase.auth.signOut();
+    window.location.href = '/rentwise-login.html';
+  }
+</script>
+
+</body>
+</html>

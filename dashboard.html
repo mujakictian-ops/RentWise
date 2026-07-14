@@ -38,13 +38,57 @@
     .nav-item .icon { font-size: 1rem; width: 20px; text-align: center; }
 
     .sidebar-bottom { margin-top: auto; border-top: 1px solid var(--border); padding-top: 16px; }
-    .user-pill { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; }
+    .user-pill { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
+    .user-pill:hover { background: rgba(255,255,255,0.04); }
     .user-av { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--gold-light)); display: flex; align-items: center; justify-content: center; color: #0C0C0F; font-weight: 800; font-size: 0.75rem; flex-shrink: 0; }
     .user-info { min-width: 0; }
     .user-name { font-size: 0.82rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .user-status { font-size: 0.68rem; color: var(--green); }
     .btn-logout { width: 100%; padding: 9px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--gray-light); font-family: 'Inter', sans-serif; font-size: 0.8rem; cursor: pointer; margin-top: 8px; transition: all 0.2s; }
     .btn-logout:hover { border-color: rgba(255,255,255,0.15); color: var(--white); }
+
+    /* PROFILE PANEL */
+    .profile-overlay { position: fixed; inset: 0; z-index: 200; pointer-events: none; }
+    .profile-overlay.open { pointer-events: auto; }
+    .profile-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.25s; }
+    .profile-overlay.open .profile-backdrop { opacity: 1; }
+    .profile-panel {
+      position: absolute; left: 240px; bottom: 0; width: 300px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 0 16px 16px 0; padding: 0;
+      transform: translateX(-20px); opacity: 0;
+      transition: transform 0.25s, opacity 0.25s;
+      box-shadow: 8px 0 40px rgba(0,0,0,0.5);
+      overflow: hidden;
+    }
+    .profile-overlay.open .profile-panel { transform: translateX(0); opacity: 1; }
+
+    .pp-head { background: linear-gradient(135deg, rgba(201,168,76,0.08), transparent); padding: 24px 20px 20px; border-bottom: 1px solid var(--border); }
+    .pp-av { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--gold-light)); display: flex; align-items: center; justify-content: center; color: #0C0C0F; font-weight: 800; font-size: 1.1rem; margin-bottom: 12px; }
+    .pp-name { font-size: 1rem; font-weight: 700; margin-bottom: 3px; }
+    .pp-email { font-size: 0.78rem; color: var(--gray-light); }
+
+    .pp-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+    .pp-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--card2); border-radius: 8px; }
+    .pp-row-label { font-size: 0.72rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+    .pp-row-value { font-size: 0.82rem; font-weight: 700; }
+    .pp-row-value.green { color: var(--green); }
+    .pp-row-value.gold { color: var(--gold); }
+    .pp-row-value.red { color: var(--red); }
+
+    .pp-notif { margin: 0 20px 8px; }
+    .pp-notif-btn {
+      width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--gold-border);
+      background: var(--gold-dim); color: var(--gold);
+      font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 700;
+      cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 7px;
+    }
+    .pp-notif-btn:hover { background: rgba(201,168,76,0.18); }
+    .pp-notif-btn.enabled { border-color: rgba(62,207,142,0.3); background: rgba(62,207,142,0.08); color: var(--green); }
+
+    .pp-footer { padding: 12px 20px 20px; border-top: 1px solid var(--border); }
+    .pp-logout { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--gray-light); font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .pp-logout:hover { border-color: var(--red); color: var(--red); }
 
     /* MAIN */
     .main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
@@ -219,7 +263,7 @@
   <button class="nav-item" onclick="showTab('tax')"><span class="icon">📅</span> Quarterly Tax</button>
 
   <div class="sidebar-bottom">
-    <div class="user-pill">
+    <div class="user-pill" onclick="openProfile()">
       <div class="user-av" id="user-av">?</div>
       <div class="user-info">
         <div class="user-name" id="user-name">Loading…</div>
@@ -494,6 +538,44 @@
   </div>
 </div>
 
+<!-- PROFILE PANEL -->
+<div class="profile-overlay" id="profile-overlay">
+  <div class="profile-backdrop" onclick="closeProfile()"></div>
+  <div class="profile-panel">
+    <div class="pp-head">
+      <div class="pp-av" id="pp-av">?</div>
+      <div class="pp-name" id="pp-name">—</div>
+      <div class="pp-email" id="pp-email">—</div>
+    </div>
+    <div class="pp-body">
+      <div class="pp-row">
+        <span class="pp-row-label">Plan</span>
+        <span class="pp-row-value gold" id="pp-plan">—</span>
+      </div>
+      <div class="pp-row">
+        <span class="pp-row-label">Status</span>
+        <span class="pp-row-value" id="pp-status">—</span>
+      </div>
+      <div class="pp-row">
+        <span class="pp-row-label">Trial ends</span>
+        <span class="pp-row-value" id="pp-trial">—</span>
+      </div>
+      <div class="pp-row">
+        <span class="pp-row-label">Properties</span>
+        <span class="pp-row-value" id="pp-props">—</span>
+      </div>
+    </div>
+    <div class="pp-notif">
+      <button class="pp-notif-btn" id="pp-notif-btn" onclick="toggleNotifications()">
+        🔔 Enable tax deadline reminders
+      </button>
+    </div>
+    <div class="pp-footer">
+      <button class="pp-logout" onclick="logout()">Log out</button>
+    </div>
+  </div>
+</div>
+
 <script>
   // ==========================================
   // CONFIG — zamenjaj s svojimi ključi
@@ -524,6 +606,7 @@
     await loadTransactions();
     updateStats();
     setTodayDates();
+    if (Notification.permission === 'granted') scheduleNotificationCheck();
   })();
 
   async function loadProfile() {
@@ -801,9 +884,111 @@
   }
 
   // ==========================================
+  // PROFILE PANEL
+  // ==========================================
+  function openProfile() {
+    const overlay = document.getElementById('profile-overlay');
+    overlay.classList.add('open');
+
+    // Populate profile data
+    if (profile) {
+      const initials = (profile.full_name || profile.email || 'U')[0].toUpperCase();
+      document.getElementById('pp-av').textContent = initials;
+      document.getElementById('pp-name').textContent = profile.full_name || 'No name set';
+      document.getElementById('pp-email').textContent = profile.email || user.email;
+
+      const planLabel = profile.plan === 'annual' ? 'Annual ($59/mo)' : 'Monthly ($79/mo)';
+      document.getElementById('pp-plan').textContent = planLabel;
+
+      const statusMap = {
+        trialing: { text: '🟡 Trial', cls: 'gold' },
+        active: { text: '🟢 Active', cls: 'green' },
+        past_due: { text: '🔴 Past due', cls: 'red' },
+        canceled: { text: '⚫ Canceled', cls: '' },
+      };
+      const s = statusMap[profile.subscription_status] || { text: profile.subscription_status, cls: '' };
+      const statusEl = document.getElementById('pp-status');
+      statusEl.textContent = s.text;
+      statusEl.className = 'pp-row-value ' + s.cls;
+
+      if (profile.trial_ends_at) {
+        const d = new Date(profile.trial_ends_at);
+        document.getElementById('pp-trial').textContent = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      } else {
+        document.getElementById('pp-trial').textContent = '—';
+      }
+    }
+
+    document.getElementById('pp-props').textContent = properties.length + ' propert' + (properties.length === 1 ? 'y' : 'ies');
+
+    // Notification button state
+    const notifBtn = document.getElementById('pp-notif-btn');
+    if (Notification.permission === 'granted') {
+      notifBtn.textContent = '🔔 Reminders enabled';
+      notifBtn.classList.add('enabled');
+    } else {
+      notifBtn.textContent = '🔔 Enable tax deadline reminders';
+      notifBtn.classList.remove('enabled');
+    }
+  }
+
+  function closeProfile() {
+    document.getElementById('profile-overlay').classList.remove('open');
+  }
+
+  // ==========================================
+  // BROWSER NOTIFICATIONS
+  // ==========================================
+  async function toggleNotifications() {
+    if (Notification.permission === 'granted') {
+      // Already enabled — send a test
+      new Notification('RentWise 📅', {
+        body: 'Q3 estimated tax due September 15. Check your dashboard.',
+        icon: '/favicon.ico',
+      });
+      return;
+    }
+
+    const perm = await Notification.requestPermission();
+    const btn = document.getElementById('pp-notif-btn');
+    if (perm === 'granted') {
+      btn.textContent = '🔔 Reminders enabled';
+      btn.classList.add('enabled');
+      new Notification('RentWise 📅', {
+        body: 'Tax deadline reminders are on. We\'ll notify you 14 days before each IRS deadline.',
+        icon: '/favicon.ico',
+      });
+      scheduleNotificationCheck();
+    } else {
+      btn.textContent = '🔔 Enable tax deadline reminders';
+      btn.classList.remove('enabled');
+    }
+  }
+
+  function scheduleNotificationCheck() {
+    // Check every 24h if a deadline is within 14 days
+    const deadlines = [
+      { q: 'Q1', date: new Date('2026-04-15') },
+      { q: 'Q2', date: new Date('2026-06-16') },
+      { q: 'Q3', date: new Date('2026-09-15') },
+      { q: 'Q4', date: new Date('2027-01-15') },
+    ];
+    const today = new Date();
+    deadlines.forEach(d => {
+      const daysLeft = Math.ceil((d.date - today) / (1000 * 60 * 60 * 24));
+      if (daysLeft > 0 && daysLeft <= 14 && Notification.permission === 'granted') {
+        new Notification(`RentWise — ${d.q} Tax Due Soon 📅`, {
+          body: `${d.q} estimated tax payment due in ${daysLeft} days (${d.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}). Check your dashboard.`,
+        });
+      }
+    });
+  }
+
+  // ==========================================
   // LOGOUT
   // ==========================================
   async function logout() {
+    closeProfile();
     await supabase.auth.signOut();
     window.location.href = '/login.html';
   }

@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RentWise — Log In</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -16,116 +15,76 @@
       --red: #E05252;
     }
     body { font-family: 'Inter', sans-serif; background: var(--black); color: var(--white); min-height: 100vh; display: flex; flex-direction: column; }
-
-    nav {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 40px; height: 64px; border-bottom: 1px solid var(--border);
-    }
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 0 40px; height: 64px; border-bottom: 1px solid var(--border); }
     .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.1rem; text-decoration: none; color: var(--white); }
     .logo-icon { width: 28px; height: 28px; background: linear-gradient(135deg, var(--gold), var(--gold-light)); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
     .logo span { color: var(--gold); }
     .nav-signup { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #0C0C0F; padding: 8px 18px; border-radius: 7px; font-weight: 700; font-size: 0.82rem; text-decoration: none; }
-
     main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 48px 24px; }
-
-    .box {
-      width: 100%; max-width: 400px;
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 20px; padding: 40px 36px;
-    }
-
+    .box { width: 100%; max-width: 400px; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 40px 36px; }
     .box-head { text-align: center; margin-bottom: 28px; }
     .box-head h1 { font-size: 1.55rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 8px; }
     .box-head p { font-size: 0.85rem; color: var(--gray-light); }
-
     .field { margin-bottom: 16px; }
     label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--gray-light); margin-bottom: 6px; letter-spacing: 0.03em; }
-    input {
-      width: 100%; padding: 11px 14px; border-radius: 9px;
-      background: var(--card2); border: 1px solid var(--border);
-      color: var(--white); font-family: 'Inter', sans-serif; font-size: 0.9rem;
-      outline: none; transition: border-color 0.2s;
-    }
+    input { width: 100%; padding: 11px 14px; border-radius: 9px; background: var(--card2); border: 1px solid var(--border); color: var(--white); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
     input:focus { border-color: var(--gold-border); }
     input::placeholder { color: var(--gray); }
-
     .forgot { font-size: 0.75rem; color: var(--gray); text-align: right; margin-top: 4px; }
     .forgot a { color: var(--gold); text-decoration: none; }
-
-    .btn-submit {
-      width: 100%; padding: 13px; border-radius: 10px; border: none;
-      background: linear-gradient(135deg, var(--gold), var(--gold-light));
-      color: #0C0C0F; font-family: 'Inter', sans-serif; font-size: 1rem;
-      font-weight: 800; cursor: pointer; margin-top: 8px; transition: opacity 0.2s, transform 0.2s;
-    }
-    .btn-submit:hover { opacity: 0.88; transform: translateY(-1px); }
-    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-    .error-msg {
-      background: rgba(224,82,82,0.1); border: 1px solid rgba(224,82,82,0.25);
-      color: var(--red); border-radius: 8px; padding: 10px 14px;
-      font-size: 0.82rem; margin-bottom: 16px; display: none;
-    }
-
+    .btn-submit { width: 100%; padding: 13px; border-radius: 10px; border: none; background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #0C0C0F; font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 800; cursor: pointer; margin-top: 8px; transition: opacity 0.2s; }
+    .btn-submit:hover { opacity: 0.88; }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+    .error-msg { background: rgba(224,82,82,0.1); border: 1px solid rgba(224,82,82,0.25); color: var(--red); border-radius: 8px; padding: 10px 14px; font-size: 0.82rem; margin-bottom: 16px; display: none; }
     .divider { height: 1px; background: var(--border); margin: 20px 0; }
     .signup-link { text-align: center; font-size: 0.82rem; color: var(--gray); }
     .signup-link a { color: var(--gold); text-decoration: none; font-weight: 600; }
-
     footer { text-align: center; padding: 20px; font-size: 0.72rem; color: var(--gray); border-top: 1px solid var(--border); }
   </style>
 </head>
 <body>
-
 <nav>
-  <a href="/" class="logo">
-    <div class="logo-icon">🏠</div>
-    Rent<span>Wise</span>
-  </a>
-  <a href="/rentwise-register.html" class="nav-signup">Start free trial</a>
+  <a href="/" class="logo"><div class="logo-icon">🏠</div>Rent<span>Wise</span></a>
+  <a href="/register.html" class="nav-signup">Start free trial</a>
 </nav>
-
 <main>
   <div class="box">
     <div class="box-head">
       <h1>Welcome back</h1>
       <p>Log in to your RentWise account</p>
     </div>
-
     <div class="error-msg" id="error-msg"></div>
-
-    <form id="login-form" onsubmit="handleLogin(event)">
-      <div class="field">
-        <label>Email address</label>
-        <input type="email" id="email" placeholder="john@email.com" required />
-      </div>
-
-      <div class="field">
-        <label>Password</label>
-        <input type="password" id="password" placeholder="Your password" required />
-        <div class="forgot"><a href="#" onclick="forgotPassword()">Forgot password?</a></div>
-      </div>
-
-      <button type="submit" class="btn-submit" id="submit-btn">Log in →</button>
-    </form>
-
+    <div class="field">
+      <label>Email address</label>
+      <input type="email" id="email" placeholder="john@email.com" />
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="Your password" />
+      <div class="forgot"><a href="#" onclick="forgotPassword(event)">Forgot password?</a></div>
+    </div>
+    <button class="btn-submit" id="submit-btn" onclick="handleLogin()">Log in →</button>
     <div class="divider"></div>
-    <div class="signup-link">No account yet? <a href="/rentwise-register.html">Start free trial</a></div>
+    <div class="signup-link">No account yet? <a href="/register.html">Start free trial</a></div>
   </div>
 </main>
-
 <footer>RentWise — Tax estimation tool. Not tax advice. © 2026</footer>
 
 <script>
   const SUPABASE_URL = 'https://lkgxfzefpmrgwqwboqbf.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrZ3hmemVmcG1yZ3dxd2JvcWJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2MDg4NzAsImV4cCI6MjA5OTE4NDg3MH0.mDYfFKDFTtoRnETBv9_sbMiOhzw_YayW9Cf_Q5iw2Pw';
 
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let _sb = null;
+  function getSB() {
+    if (!_sb) _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    return _sb;
+  }
 
-  // Redirect če je že prijavljen
-  (async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) window.location.href = '/rentwise-dashboard.html';
-  })();
+  // Redirect if already logged in
+  window.addEventListener('load', async () => {
+    const { data: { session } } = await getSB().auth.getSession();
+    if (session) window.location.href = '/dashboard.html';
+  });
 
   function showError(msg) {
     const el = document.getElementById('error-msg');
@@ -133,41 +92,42 @@
     el.style.display = 'block';
   }
 
-  async function handleLogin(e) {
-    e.preventDefault();
+  async function handleLogin() {
     document.getElementById('error-msg').style.display = 'none';
+
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!email || !password) { showError('Email and password are required.'); return; }
 
     const btn = document.getElementById('submit-btn');
     btn.disabled = true;
     btn.textContent = 'Logging in…';
 
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
-
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (error) {
-      showError(error.message || 'Invalid email or password.');
+    try {
+      const { error } = await getSB().auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      window.location.href = '/dashboard.html';
+    } catch (err) {
+      showError(err.message || 'Invalid email or password.');
       btn.disabled = false;
       btn.textContent = 'Log in →';
-      return;
     }
-
-    window.location.href = '/rentwise-dashboard.html';
   }
 
-  async function forgotPassword() {
+  async function forgotPassword(e) {
+    e.preventDefault();
     const email = document.getElementById('email').value.trim();
     if (!email) { showError('Enter your email first.'); return; }
-
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/rentwise-reset.html',
+    const { error } = await getSB().auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/reset.html',
     });
-
     if (error) { showError(error.message); return; }
     alert('Password reset email sent! Check your inbox.');
   }
 </script>
 
+<!-- Supabase SDK — must load AFTER the inline script above -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </body>
 </html>
